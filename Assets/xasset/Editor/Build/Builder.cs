@@ -144,7 +144,7 @@ namespace xasset.editor
 
             watch.Stop();
             Logger.I($"Finish {nameof(BuildBundles)} with {watch.ElapsedMilliseconds / 1000f}s.");
-            if (changes.Count <= 0) return;
+            // if (changes.Count <= 0) return;
             SaveVersions(changes);
             PostprocessBuildBundles?.Invoke(tasks.ToArray(), changes.ToArray());
         }
@@ -170,7 +170,7 @@ namespace xasset.editor
 
         private static void SaveVersions(List<string> changes)
         {
-            var versions = Settings.GetDefaultVersions(); 
+            var versions = Settings.GetDefaultVersions();
             versions.Save(Settings.GetCachePath(Versions.Filename));
             versions = BuildBundleVersions(versions, changes);
             changes.Add(versions.GetFilename());
@@ -295,10 +295,10 @@ namespace xasset.editor
                     {
                         refs = new HashSet<string>();
                         assetWithGroups.Add(entry.asset, refs);
-                    } 
+                    }
                     refs.Add($"{entry.owner.build}-{entry.owner.name}");
                 }
-            } 
+            }
 
             var sb = new StringBuilder();
             foreach (var pair in assetWithGroups.Where(pair => pair.Value.Count > 1))
@@ -331,8 +331,22 @@ namespace xasset.editor
             switch (settings.player.assetsSplitMode)
             {
                 case PlayerAssetsSplitMode.IncludeInstallTimeAssetsOnly:
-                    if (EditorUtility.DisplayDialog("Tips", "This feature is pro only. goto https://xasset.cc see more info.", "Ok"))
-                        MenuItems.OpenAbout();
+                    // if (EditorUtility.DisplayDialog("Tips", "This feature is pro only. goto https://xasset.cc see more info.", "Ok"))
+                    //     MenuItems.OpenAbout();
+                    foreach (var version in versions.data)
+                    {
+                         ManifestBundle[] bundles = version.manifest.bundles;
+                        foreach (ManifestGroup group in version.manifest.groups)
+                        {
+                            if(group.deliveryMode == DeliveryMode.InstallTime)
+                            {
+                                foreach(int asset in group.assets)
+                                {
+                                    set.Add(bundles[asset]);
+                                }
+                            }
+                        }
+                    }
                     break;
                 case PlayerAssetsSplitMode.ExcludeAllAssets:
                     break;
@@ -404,7 +418,7 @@ namespace xasset.editor
                     if (File.Exists(manifestFile))
                         usedFiles.Add(manifestFile);
                     usedFiles.Add(Settings.GetDataPath(bundle.file));
-                } 
+                }
             }
 
             versions = Settings.GetDefaultVersions();
@@ -497,7 +511,7 @@ namespace xasset.editor
             Assets.PlayerDataPath = $"{Application.streamingAssetsPath}/{Assets.Bundles}";
             var settings = Settings.GetDefaultSettings();
             if (Settings.Platform == Platform.iOS || Settings.Platform == Platform.WebGL)
-                // iOS 下散文件 IO 效率更高
+            // iOS 下散文件 IO 效率更高
             {
             }
 
@@ -537,7 +551,7 @@ namespace xasset.editor
         }
 
         private static void CopyBundles(IEnumerable<ManifestBundle> bundles, PlayerAssets playerAssets)
-        {  
+        {
             foreach (var bundle in bundles)
             {
                 var from = Settings.GetDataPath(bundle.file);
